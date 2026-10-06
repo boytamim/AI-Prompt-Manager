@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Prompt Manager</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+  
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <i class="ph-fill ph-magic-wand logo-icon"></i>
+      <div class="sidebar-title">Prompt Manager</div>
+    </div>
+    
+    <div class="sidebar-content">
+      <div class="nav-section">
+        <div class="nav-section-title">Main</div>
+        <a href="#" class="nav-item active" data-view="dashboard">
+          <i class="ph ph-squares-four nav-icon"></i>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-view="all">
+          <i class="ph ph-list-dashes nav-icon"></i>
+          <span class="nav-label">All Prompts</span>
+          <span class="badge" id="total-prompts-badge">0</span>
+        </a>
+        <a href="#" class="nav-item" data-view="favorites">
+          <i class="ph ph-star nav-icon"></i>
+          <span class="nav-label">Favorites</span>
+          <span class="badge" id="fav-prompts-badge">0</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Categories</div>
+        <div id="category-nav-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">System</div>
+        <a href="#" class="nav-item" data-view="settings">
+          <i class="ph ph-gear nav-icon"></i>
+          <span class="nav-label">Settings</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="mobile-toggle" id="mobile-toggle">
+        <i class="ph ph-list"></i>
+      </button>
+      
+      <div class="search-container">
+        <i class="ph ph-magnifying-glass search-icon"></i>
+        <input type="text" id="global-search" class="search-input" placeholder="Search prompts, tags, or content...">
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn btn-primary" id="btn-add-prompt">
+          <i class="ph ph-plus"></i> New Prompt
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="content-area" id="content-area">
+      <div class="content-header">
+        <h1 class="page-title" id="page-title">Dashboard</h1>
+        <div class="filters-bar" id="filters-bar">
+          <select class="filter-select" id="sort-select">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="az">A-Z</option>
+            <option value="za">Z-A</option>
+          </select>
+          <select class="filter-select" id="category-filter">
+            <option value="all">All Categories</option>
+            <!-- Populated by JS -->
+          </select>
+        </div>
+      </div>
+
+      <div class="prompts-grid" id="prompts-grid">
+        <!-- Prompts rendered here via JS -->
+      </div>
+      
+      <!-- Settings View (hidden by default) -->
+      <div id="settings-view" class="hidden">
+        <div class="settings-section">
+          <h3>Appearance</h3>
+          <p>Customize the application theme.</p>
+          <div class="form-group" style="max-width: 200px;">
+            <select id="theme-select">
+              <option value="dark">Dark Mode</option>
+              <option value="light">Light Mode</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Data Management</h3>
+          <p>Export your prompts to a JSON file for backup or import an existing backup. Data is stored entirely locally in your browser.</p>
+          <div class="settings-actions">
+            <button class="btn btn-secondary" id="btn-export">
+              <i class="ph ph-download-simple"></i> Export JSON
+            </button>
+            <button class="btn btn-secondary" id="btn-import-trigger">
+              <i class="ph ph-upload-simple"></i> Import JSON
+            </button>
+            <input type="file" id="file-import" accept=".json" class="hidden">
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h3>Danger Zone</h3>
+          <p>This will permanently delete all your prompts and custom categories. This action cannot be undone.</p>
+          <div class="settings-actions">
+            <button class="btn btn-danger" id="btn-clear-data">
+              <i class="ph ph-trash"></i> Clear All Data
+            </button>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h3>About</h3>
+          <p>AI Prompt Manager is a free, open-source personal prompt management tool built with vanilla web technologies. It respects your privacy by keeping all data locally on your device.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Add/Edit Prompt Modal -->
+  <div class="modal-overlay" id="prompt-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2 class="modal-title" id="prompt-modal-title">Add New Prompt</h2>
+        <button class="modal-close" id="prompt-modal-close"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="prompt-form">
+          <input type="hidden" id="prompt-id">
+          
+          <div class="form-group">
+            <label for="prompt-title">Title <span class="text-danger">*</span></label>
+            <input type="text" id="prompt-title" placeholder="e.g. Code Review Assistant" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="prompt-desc">Short Description</label>
+            <input type="text" id="prompt-desc" placeholder="What does this prompt do?">
+          </div>
+          
+          <div class="form-group">
+            <label for="prompt-content">Prompt Content <span class="text-danger">*</span></label>
+            <textarea id="prompt-content" placeholder="Act as a senior developer and review the following code..." required></textarea>
+          </div>
+          
+          <div style="display: flex; gap: var(--spacing-md);">
+            <div class="form-group" style="flex: 1;">
+              <label for="prompt-category">Category</label>
+              <input type="text" id="prompt-category" list="category-options" placeholder="Select or type new...">
+              <datalist id="category-options">
+                <!-- Categories populated by JS -->
+              </datalist>
+            </div>
+            
+            <div class="form-group" style="flex: 1;">
+              <label for="prompt-model">Target AI Model</label>
+              <select id="prompt-model">
+                <option value="Any">Any</option>
+                <option value="ChatGPT">ChatGPT</option>
+                <option value="Claude">Claude</option>
+                <option value="Gemini">Gemini</option>
+                <option value="Midjourney">Midjourney</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Tags (Press Enter to add)</label>
+            <div class="tags-input-container" id="tags-container">
+              <input type="text" id="tags-input" class="tags-input" placeholder="Add tag...">
+            </div>
+          </div>
+          
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="prompt-modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="prompt-modal-save">Save Prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Prompt Modal -->
+  <div class="modal-overlay" id="view-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2 class="modal-title" id="view-modal-title">Prompt Title</h2>
+        <button class="modal-close" id="view-modal-close"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-secondary" id="view-modal-desc" style="margin-bottom: 16px;"></p>
+        <div class="card-badges" id="view-modal-badges"></div>
+        <label>Prompt Content</label>
+        <div class="prompt-content-view" id="view-modal-content"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="view-modal-copy">
+          <i class="ph ph-copy"></i> Copy to Clipboard
+        </button>
+        <button class="btn btn-primary" id="view-modal-edit">
+          <i class="ph ph-pencil"></i> Edit Prompt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
