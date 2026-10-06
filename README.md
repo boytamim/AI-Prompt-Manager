@@ -1,2 +1,2 @@
 # AI-Prompt-Manager
-A free, browser-based SVG icon toolkit for inspecting, customizing, validating, and exporting SVG files.
+A free, open-source prompt manager for saving, organizing, searching, and exporting AI prompts.
